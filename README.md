@@ -2,7 +2,7 @@
 
 AI-powered food-waste prediction and inventory management for institutional messes and canteens.
 
-**Live demo:** _add your Vercel URL here_. Click **Try the demo account** (`demo@ecomess.ai` / `EcoMess@2026`).
+**Live demo:**https://ecomess-ai.vercel.app/. Click **Try the demo account** (`demo@ecomess.ai` / `EcoMess@2026`).
 
 ## What it does
 
