@@ -1,0 +1,49 @@
+# Render Blueprint — deploys the API and the ML service on the free plan.
+# Database: Neon (free, doesn't expire). Frontend: Vercel.
+services:
+  - type: web
+    name: ecomess-ml
+    runtime: python
+    plan: free
+    rootDir: ml-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        sync: false # paste your Neon connection string
+      - key: ML_API_KEY
+        generateValue: true
+
+  - type: web
+    name: ecomess-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.1
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # same Neon connection string
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false # e.g. https://ecomess-ai.vercel.app
+      - key: ML_SERVICE_URL
+        sync: false # e.g. https://ecomess-ml.onrender.com
+      - key: ML_API_KEY
+        fromService:
+          type: web
+          name: ecomess-ml
+          envVarKey: ML_API_KEY
+      - key: SEED_DEMO
+        value: "true"

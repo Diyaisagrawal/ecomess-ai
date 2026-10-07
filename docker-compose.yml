@@ -1,5 +1,6 @@
-version: '3.9'
-
+# Full stack locally:  docker compose up --build
+#   frontend http://localhost:3000 · API http://localhost:5000 · ML http://localhost:8000/docs
+# Database only (for npm run dev):  docker compose up postgres
 services:
   postgres:
     image: postgres:16-alpine
@@ -14,9 +15,49 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ecomess"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+
+  ml-service:
+    build: ./ml-service
+    environment:
+      DATABASE_URL: postgresql://ecomess:ecomess_password@postgres:5432/ecomess_db
+      ML_API_KEY: local-ml-key
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ecomess:ecomess_password@postgres:5432/ecomess_db
+      JWT_SECRET: local-jwt-secret
+      REFRESH_SECRET: local-refresh-secret
+      FRONTEND_URL: http://localhost:3000
+      ML_SERVICE_URL: http://ml-service:8000
+      ML_API_KEY: local-ml-key
+      SEED_DEMO: "true"
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
